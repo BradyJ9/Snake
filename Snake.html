@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Snake</title>
+		<meta name="generator" content="BBEdit 11.6" />
+	</head>
+<body>
+
+<canvas id= "myCanvas" width="600" height="600">
+</canvas>
+
+<form id="difficultyRadio">
+	<input type="radio" name="difficulty" value="Easy" checked>Easy<br>
+	<input type="radio" name="difficulty" value="Medium">Medium<br>
+	<input type="radio" name="difficulty" value="Hard">Hard<br>
+</form>
+
+<script>
+window.onload = function() {
+c = document.getElementById("myCanvas");
+ctx = c.getContext("2d");
+document.addEventListener("keydown", keyPush);
+initSnake();
+//initDifficulty();
+//interval = setInterval(game,1000/difficultyMultiplier);
+
+}
+
+//game attributes
+//player position
+difficultyMultiplier = 10;
+score = 0;
+px= 14;
+py=14;
+length= 3;
+snakeX = [];
+snakeY = [];
+passX = [];
+passY = [];
+//snake sizes
+startSize = 3;
+gs= 18;
+space = 2;
+//tile count and scale
+tc= 20;
+//apple position
+ax=ay=5;
+//player velocity
+xv= 0;
+yv=0;
+flag = false;
+
+//other vars
+lastKey = 0;
+EASY_DIFF = 12;
+MED_DIFF = 15;
+HARD_DIFF = 18;
+
+function initDifficulty() {
+	var diff = document.querySelector('input[name = "difficulty"]:checked').value;
+	if (diff == "Easy") {
+		difficultyMultiplier = EASY_DIFF;
+	}
+	if (diff == "Medium") {
+		difficultyMultiplier = MED_DIFF;
+	}
+	if (diff == "Hard") {
+		difficultyMultiplier = HARD_DIFF;
+	}
+}
+
+function initSnake() {
+
+	for (i = 0; i < startSize; ++i) {
+		snakeX.push(px*tc);
+		snakeY.push(py*tc+i*tc);
+		ctx.fillStyle = "lime";
+		ctx.fillRect(snakeX[i], snakeY[i], gs, gs);
+	}
+	game();
+}
+
+
+function game() {
+
+	px+=xv; //keeps snake moving
+	py+=yv;
+	//var newtailx = snake[0].x //head
+	//var newtaily = snake[0].y
+	if (flag) {
+		passBackXandY();
+	}
+	checkBounds();
+
+	if (checkCollision()) {
+	resetGame();
+	}
+
+
+	if (px == ax && py == ay) { //apple eaten
+		ax = getRandomInt();
+		ay = getRandomInt();
+		for (i = 0; i < length; ++i) {
+			while (ax*tc == snakeX[i] && ay*tc == snakeY[i]) {
+					ax = getRandomInt();
+					ay = getRandomInt();
+			}
+		}
+		++length;
+		++length;
+		length = length + 3;
+		if (score == 0) {
+			score = 3;
+		}
+		++score;
+		++score;
+		//tailx.unshift(newtailx);
+		//taily.unshift(newtaily);
+		//push();
+	}
+
+	ctx.fillStyle = "black";
+	ctx.fillRect(0, 0, c.width, c.height); //(x loc on screen, y loc, width, height)
+	ctx.fillStyle = "lime";
+	ctx.fillRect(px*tc, py*tc, gs, gs); //prints head
+	snakeX[0] = px*tc;
+	snakeY[0] = py*tc;
+
+	ctx.fillStyle = "red";
+	ctx.fillRect(ax*tc, ay*tc, gs, gs); //prints apple
+
+	ctx.font = "20px Comic Sans MS";
+	ctx.fillStyle = "blue";
+	ctx.fillText("Score: " + score, 20, 20);
+
+	for (var i = 1; i < length; ++i) { //prints tail
+		//tailx[i] = tailx[i - 1];
+		//taily[i] = taily[i - 1];
+		ctx.fillStyle = "lime";
+		ctx.fillRect(snakeX[i], snakeY[i], gs, gs);
+	}
+	passXAndY();
+
+}
+
+function checkBounds() {
+	if (px < 0) { //wraps snake
+		px= c.width/tc - 1;
+	}
+	else if (px > c.width/tc - 1) {
+		px = 0;
+	}
+	else if (py < 0) {
+		py = c.height/tc - 1;
+	}
+	else if (py > c.height/tc - 1) {
+		py = 0;
+	}
+}
+
+function passXAndY() {
+
+	for (i = 0; i < length - 1; ++i) { //loads xy into buffer
+		passX[i] = snakeX[i];
+		passY[i] = snakeY[i];
+	}
+
+}
+
+function passBackXandY() {
+
+	for (i = 1; i < length; ++i) {  //loads new value of snake
+		snakeX[i] = passX[i - 1];
+		snakeY[i] = passY[i - 1];
+
+	}
+}
+
+function checkCollision() {
+
+	for (i = 3; i < length; ++i) {
+		if (snakeX[0] === snakeX[i] && snakeY[0] === snakeY[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function keyPush(evt) { //evt is key pressed, automatic parameter
+	if (!flag) {
+		initDifficulty();
+		interval = setInterval(game,1000/difficultyMultiplier);
+	}
+	flag = true;
+
+	switch(evt.keyCode) {
+		case 37:
+			evt.preventDefault(); //prevents page from scrolling with press
+			if (lastKey == 39) {
+				return;
+			}
+			xv=-1;yv=0;
+			lastKey = 37;
+			break;
+		case 38:
+			evt.preventDefault();
+			if (lastKey == 40) {
+				return;
+			}
+			xv=0;yv=-1;
+			lastKey = 38;
+			break;
+		case 39:
+			evt.preventDefault();
+			if (lastKey == 37) {
+				return;
+			}
+			xv=1;yv=0;
+			lastKey = 39;
+			break;
+		case 40:
+			evt.preventDefault();
+			if (lastKey == 38) {
+				return;
+			}
+			xv=0;yv=1;
+			lastKey = 40;
+			break;
+	}
+}
+
+function getRandomInt() {
+return Math.floor(Math.random() * (c.height/tc));
+}
+
+function resetGame() {
+	lastKey = null;
+	px=py= 14;
+	snakeX = [];
+	snakeY = [];
+	passX = [];
+	passY = [];
+	length = 3;
+	score = 0;
+	alert("Game Over");
+	xv=yv=0;
+	flag = false;
+	clearInterval(interval);
+	window.onload.call();
+	//initSnake();
+
+}
+
+</script>
+
+</body>
+</html>
